@@ -1331,7 +1331,12 @@ localsub(const time_t * const timep, const int_fast32_t offset,
             return result;
     }
     if (sp->timecnt == 0 || t < sp->ats[0]) {
-        i = sp->defaulttype;
+        i = 0;
+        while (sp->ttis[i].tt_isdst)
+            if (++i >= sp->typecnt) {
+                i = 0;
+                break;
+            }
     } else {
         register int lo = 1;
         register int hi = sp->timecnt;
