@@ -265,6 +265,20 @@ detzcode64(const char *const codep)
 }
 
 static void
+update_tzname_etc(struct state const *sp, struct ttinfo const *ttisp)
+{
+    tzname[ttisp->tt_isdst] = (char *) &sp->chars[ttisp->tt_abbrind];
+#ifdef USG_COMPAT
+    if (!ttisp->tt_isdst)
+        timezone = - ttisp->tt_gmtoff;
+#endif
+#ifdef ALTZONE
+    if (ttisp->tt_isdst)
+        altzone = - ttisp->tt_gmtoff;
+#endif
+}
+
+static void
 settzname(void)
 {
     register struct state * const sp = lclptr;
@@ -287,26 +301,17 @@ settzname(void)
     */
     for (i = 0; i < sp->typecnt; ++i) {
         register const struct ttinfo * const    ttisp = &sp->ttis[i];
-
-        tzname[ttisp->tt_isdst] = &sp->chars[ttisp->tt_abbrind];
+        update_tzname_etc(sp, ttisp);
     }
     for (i = 0; i < sp->timecnt; ++i) {
         register const struct ttinfo * const    ttisp =
                             &sp->ttis[
                                 sp->types[i]];
-
-        tzname[ttisp->tt_isdst] =
-            &sp->chars[ttisp->tt_abbrind];
+        update_tzname_etc(sp, ttisp);
 #ifdef USG_COMPAT
         if (ttisp->tt_isdst)
             daylight = 1;
-        if (!ttisp->tt_isdst)
-            timezone = -(ttisp->tt_gmtoff);
 #endif /* defined USG_COMPAT */
-#ifdef ALTZONE
-        if (ttisp->tt_isdst)
-            altzone = -(ttisp->tt_gmtoff);
-#endif /* defined ALTZONE */
     }
     /*
     ** Finally, scrub the abbreviations.
